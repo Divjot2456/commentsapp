@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+
+<div class="container">
+    <header class="jumbotron">
+            <h1>Welcome To Comments App!</h1>
+            <p>Connect with people from all over the world</p>
+            <p>
+                <a class="btn btn-primary btn-lg" href="/comments/new">Add New Comment</a>
+            </p>
+    </header>
+
+    <% comments2.forEach(function(comment){ %>
+        <div>
+            <h4 class="font-weight-bold text-primary"><%= comment.name %></h4>
+            <p><%= comment.text %></p>
+            <a href="/comments/<%= comment._id %>/reply/new" class="btn btn-primary">Reply</a>
+        </div>
+        <div>
+            <h5><%= comment.author %></h5>
+            <p><%= comment.info %></p>
+        </div>
+    <% }); %>
+    
+</div>
+
+<%- include('../partials/footer') %>
