@@ -1,15 +1,27 @@
 var express = require('express'),
     app = express(),
     mongoose = require('mongoose'),
-    bodyParser = require('body-parser');
+    cors = require('cors');
+bodyParser = require('body-parser');
 
 app.set('view engine', 'ejs');
 mongoose.set('useUnifiedTopology', true);
 
-mongoose.connect('mongodb://localhost:27017/comment_app', { useNewUrlParser: true});
+mongoose.connect('mongodb://localhost:27017/comment_app', { useNewUrlParser: true });
 
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+app.use(cors());
+
+app.use(function (req, res, next) {
+    res.header('Access-Control-Allow-Origin', 'http://localhost:3000/comments');
+    res.header(
+        'Access-Control-Allow-Headers',
+        'Origin, X-Requested-With, Content-Type, Accept'
+    );
+    next();
+});
 
 // SCHEMA SETUP
 var commentSchema = new mongoose.Schema({
@@ -34,14 +46,14 @@ var Reply = mongoose.model('Reply', replySchema);
 
 // ROUTES
 
-app.get('/', function(req, res){
+app.get('/', function (req, res) {
     res.render('landing');
 });
 
 // INDEX ROUTE - shows all comments
-var list_all_comments = function(req, res){
-    Comment.find().populate('replys').exec(function(err, comment){
-        if(err) {
+var list_all_comments = function (req, res) {
+    Comment.find().populate('replys').exec(function (err, comment) {
+        if (err) {
             res.send(err);
         } else {
             res.json(comment);
@@ -62,15 +74,10 @@ app.route('/comments').get(list_all_comments);
 // });
 
 // CREATE ROUTE - add new comment to DB
-var create_a_comment = function(req, res){
-    req.body.comm = {
-        name: 'harry potter',
-        text: 'expeliarmus'
-    }
-    var new_comm = req.body.comm;
-    var new_comment = new Comment(new_comm);
-    new_comment.save(function(err, comment){
-        if(err) {
+var create_a_comment = function (req, res) {
+    var new_comment = new Comment(req.body);
+    new_comment.save(function (err, comment) {
+        if (err) {
             res.send(err);
         } else {
             res.json(comment);
@@ -96,7 +103,7 @@ app.route('/comments').post(create_a_comment);
 // });
 
 // NEW - show form to create new comment
-app.get('/comments/new', function(req, res){
+app.get('/comments/new', function (req, res) {
     res.render('comments/new');
 });
 
@@ -104,33 +111,38 @@ app.get('/comments/new', function(req, res){
 // REPLY ROUTES
 // ======================
 
-app.get('/comments/:id/reply/new', function(req, res){
+app.get('/comments/:id/reply/new', function (req, res) {
     // find comment by id
-    Comment.findById(req.params.id, function(err, comment){
-        if(err){
+    Comment.findById(req.params.id, function (err, comment) {
+        if (err) {
             console.log(err);
         } else {
-            res.render('replys/new', {comment4: comment});
+            res.render('replys/new', { comment4: comment });
         }
     });
 });
 
-var create_a_reply = function(req, res){
-    req.params = {
-        author: 'jon snow',
-        info: 'ayye'
-    }
-    var new_reply = new Reply(req.params);
-    new_reply.save(function(err, reply){
-        if(err) {
-            res.send(err);
+var create_a_reply = function (req, res) {
+    var new_reply = new Reply(req.body);
+    Comment.findById(req.params.id).populate('replys').exec(function (err, comment) {
+        if (err) {
+            console.log(err);
+            res.json(comment);
         } else {
-            res.json(reply);
+            new_reply.save(function (err, reply) {
+                if (err) {
+                    res.send(err);
+                } else {
+                    comment.replys.push(reply);
+                    comment.save();
+                    res.json(comment);
+                }
+            });
         }
     });
 };
 
-app.route('/comments/5f71919b617ae60f005ba05a/replys').post(create_a_reply);
+app.route('/comments/:id/replys').post(create_a_reply);
 // app.post('/comments/:id/replys', function(req, res){
 //     // look up comment using id
 //     Comment.findById(req.params.id, function(err, comment){
@@ -155,8 +167,8 @@ app.route('/comments/5f71919b617ae60f005ba05a/replys').post(create_a_reply);
 // });
 
 // tell express to listen for requests (start server)
-
-var port = process.env.PORT || 3000;
-app.listen(port, function(){
+// process.env.PORT
+// var port = 3000 || '0.0.0.0';
+app.listen(3000, '0.0.0.0', function () {
     console.log('The Comment App Server has Started!!!');
 });

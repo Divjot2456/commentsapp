@@ -15,11 +15,13 @@
             <p><%= comment.text %></p>
             <a href="/comments/<%= comment._id %>/reply/new" class="btn btn-primary">Reply</a>
         </div>
-        <div>
-            <h5><%= comment.author %></h5>
-            <p><%= comment.info %></p>
-        </div>
+        <% comment.replys.forEach(function(reply){ %>
+            <div>
+                <strong><%= reply.author %></strong> - <%= reply.info %>
+            </div>
+        <% }) %>
     <% }); %>
+    
     
 </div>
 
